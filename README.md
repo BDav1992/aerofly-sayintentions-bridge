@@ -11,10 +11,6 @@ route) before launching Aerofly.
 > **Not affiliated with IPACS (Aerofly) or SayIntentions.AI.** This is an independent, community
 > bridge built on top of publicly documented interfaces.
 
-## Screenshots
-
-*(add your own screenshots here — Base Systems tab, First Officer tab, SimBrief tab)*
-
 ## Features
 
 - **Live telemetry → SayIntentions**: position, altitude, heading, speed, aircraft type, on-ground
