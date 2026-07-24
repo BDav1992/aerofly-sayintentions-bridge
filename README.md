@@ -59,8 +59,10 @@ route, runways) before launching Aerofly.
   [Known Limitations](#known-limitations)).
 - **One-click launch**: writes the current real-world UTC time plus any staged weather/aircraft/
   route/runways, then launches Aerofly via Steam — or, if `aerofly_fs_4.exe` was found automatically
-  (see [Known Limitations](#known-limitations)), launches VR mode *directly* with the `-openvr`
-  flag, which is far more reliable than Steam's own launch.
+  (the usual case - Steam's own install path/library folders are read directly), launches VR mode
+  *directly* with the `-openvr` flag. Confirmed working reliably in testing, unlike Steam's own
+  `rungameid` launch, which silently ignores `main.mcf`'s `vr_use_openvr` flag and just uses
+  whichever VR/Desktop choice was last made in Steam itself.
 - **Dark, glass-cockpit UI**: a custom dark theme (cyan/amber accents, monospace data readouts)
   instead of the stock light Tk look.
 
@@ -101,11 +103,10 @@ python aerofly_sayintentions_bridge.py
 The first time you run it, if it can't auto-detect your `main.mcf` (used for weather/time/aircraft/
 route staging), use **Browse main.mcf...** in the bar at the bottom of the window (visible under
 every tab, right above the Launch buttons) to point it at `Documents\Aerofly FS 4\main.mcf` - it's
-remembered in `bridge_config.json`. Your `aerofly_fs_4.exe` path (needed for reliable VR launch,
-see [Known Limitations](#known-limitations)) is detected automatically via Steam's own registry
-entry and library folders - no action needed unless that lookup fails, in which case it's shown
-next to a warning in the same bar. The OurAirports runway data is cached to `runways_cache.csv`
-next to the script on first use.
+remembered in `bridge_config.json`. Your `aerofly_fs_4.exe` path (needed for VR launch) is detected
+automatically via Steam's own registry entry and library folders - no action needed unless that
+lookup fails, in which case it's shown next to a warning in the same bar. The OurAirports runway
+data is cached to `runways_cache.csv` next to the script on first use.
 
 ## Known Limitations
 
@@ -137,15 +138,6 @@ may turn out to be either side.
   visibility. `SEA LEVEL PRESSURE` is always sent as 1013.
 - **No temperature simulation**, for the same reason — only wind/visibility/clouds are staged from
   a fetched METAR.
-- **VR launch via Steam's `rungameid` protocol ignores `main.mcf` entirely.** `vr_use_openvr` is
-  only ever a record of the last choice made *in Steam itself* (its own VR/Desktop launch popup, or
-  the fixed option set in Steam's Properties → General) — Aerofly's `.exe` doesn't read it to decide
-  VR mode at startup. **Fix**: the app locates `aerofly_fs_4.exe` automatically (via Steam's registry
-  entry and library folders - see `_steam_library_roots()`) and Launch VR starts it directly with the
-  `-openvr` flag instead of going through Steam's `rungameid`, which reliably forces VR mode (have
-  SteamVR/your headset already running, as always). If that lookup fails to find the exe (shown as a
-  warning in the bottom bar), it falls back to the old Steam-launch behavior instead, which may be
-  unreliable.
 - **Livery auto-detection can still include non-airline paint options.** It's based on whether a
   folder contains texture files, which correctly excludes pure config folders (engine choice,
   wingtip choice, etc.) but can't distinguish a genuine airline livery from another paint-bearing
