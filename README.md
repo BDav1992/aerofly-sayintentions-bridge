@@ -15,6 +15,7 @@ route, runways) before launching Aerofly.
 
 - **Live telemetry → SayIntentions**: position, altitude, heading, speed, aircraft type, on-ground
   status, transponder code, ambient wind — written continuously to SayIntentions' SimAPI input file.
+  Confirmed working: SayIntentions' RAAS (Runway Awareness and Advisory System) callouts.
 - **Radio Panel**: COM1/COM2 active + standby frequencies laid out like a real radio (active on the
   left, standby on the right, SWAP in the middle). Both sides mirror Aerofly's actual live
   frequencies continuously - typing a new standby value and hitting Send (or an ATC command from
@@ -34,16 +35,23 @@ route, runways) before launching Aerofly.
   into `main.mcf`. In Full load mode, empty SID/STAR/Approach placeholder nodes are also added (an
   experimental attempt at triggering Aerofly's own runway-list population).
 - **Flight plan mode**: a dropdown controlling how much of a fetched SimBrief OFP gets applied at
-  Launch - Full load (every navlog waypoint), Pre-load (origin/destination + runways only), or Empty
-  (clears the route from `main.mcf` entirely). Weather and real time are staged either way, and
-  switching modes takes effect on the very next Launch with no need to re-fetch.
+  Launch - Full load (every navlog waypoint), Pre-load (origin/destination + runways only), Empty
+  (clears the route from `main.mcf` entirely), or Don't load (leaves aircraft/route completely
+  untouched - for resuming a flight already in progress - and stages the *destination's* weather
+  instead of the departure's). Real time is always staged; every mode except Don't load stages
+  departure weather. Switching modes takes effect on the very next Launch with no need to re-fetch.
 - **Official UID generation**: every navdata `Uid` written to `main.mcf` (airports, runways,
   waypoints) is computed with Aerofly's own world-grid formula — reverse-engineered and confirmed
   directly against IPACS developer Jan's C++ source, validated to exact/bit-perfect matches on the
   large majority of real captured UIDs tested.
-- **Weather staging**: fetch a real METAR for any airport and stage wind/visibility/clouds into
-  `main.mcf` for your next launch (temperature and barometric pressure can't be applied — see
-  [Known Limitations](#known-limitations)).
+- **Weather staging**: fetch a real METAR for any airport and stage wind/visibility/clouds/
+  turbulence/thermal activity into `main.mcf` for your next launch (temperature and barometric
+  pressure can't be applied — see [Known Limitations](#known-limitations); turbulence/thermal
+  activity are estimated, not read directly, and are sent to the simulator without a UI readout of
+  their own — the tab stays limited to wind/visibility/clouds/temperature/QNH). The destination
+  airport's METAR is also fetched automatically once you pull a SimBrief OFP, normally shown for
+  reference only - it's staged instead of the departure weather only in Flight plan mode "Don't
+  load" (see above).
 - **Livery auto-detection**: scans your installed aircraft folders for available liveries as soon
   as an aircraft is picked/matched (no manual button needed). Detection is content-based - it only
   counts a folder as a livery if it actually contains texture files, since Aerofly aircraft
@@ -84,8 +92,11 @@ route, runways) before launching Aerofly.
 git clone https://github.com/BDav1992/aerofly-ai-atc-bridge.git
 cd aerofly-ai-atc-bridge
 pip install -r requirements.txt
-python aerofly_sayintentions_bridge.py
+pythonw aerofly_sayintentions_bridge.pyw
 ```
+
+The `.pyw` extension means Windows won't pop up a console window when you run it (or just
+double-click the file) - the in-app **Log** tab shows everything a console would have anyway.
 
 ## Usage
 
@@ -96,8 +107,9 @@ python aerofly_sayintentions_bridge.py
 4. Optional, before your *next* flight: use the **SimBrief** tab to fetch your OFP (aircraft, route,
    cruise altitude, runway, and livery get matched) and set **Flight plan mode** to control how much
    of it gets applied - Full load (every navlog waypoint), Pre-load (origin/destination + runways
-   only), or Empty (clears the route entirely - weather and real time still apply either way).
-   Also use the **Weather** tab to fetch a METAR (wind/visibility/clouds get staged), then hit
+   only), Empty (clears the route entirely), or Don't load (leaves aircraft/route untouched and
+   stages the destination's weather instead, for resuming a flight already in progress). Also use
+   the **Weather** tab to fetch a METAR (wind/visibility/clouds get staged), then hit
    **Launch Normal** / **Launch VR** to apply everything and start Aerofly.
 
 The first time you run it, if it can't auto-detect your `main.mcf` (used for weather/time/aircraft/
@@ -138,6 +150,11 @@ may turn out to be either side.
   visibility. `SEA LEVEL PRESSURE` is always sent as 1013.
 - **No temperature simulation**, for the same reason — only wind/visibility/clouds are staged from
   a fetched METAR.
+- **Turbulence and thermal activity are estimated, not read directly from METAR** - it has no field
+  for either. Turbulence comes from the gust factor (reported gust minus sustained wind speed);
+  thermal activity comes from convective cloud types (CB/TCU) in the raw METAR text, or a warm
+  temperature with some cloud cover as a weaker signal. This is a rough proxy, not a real
+  turbulence/convection forecast.
 - **Livery auto-detection can still include non-airline paint options.** It's based on whether a
   folder contains texture files, which correctly excludes pure config folders (engine choice,
   wingtip choice, etc.) but can't distinguish a genuine airline livery from another paint-bearing
